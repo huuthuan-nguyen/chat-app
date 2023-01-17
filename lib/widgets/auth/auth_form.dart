@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 
 class AuthForm extends StatefulWidget {
-  const AuthForm({Key? key}) : super(key: key);
+  const AuthForm(this.submitFn, this.isLoading, {Key? key}) : super(key: key);
+
+  final void Function(
+    String email,
+    String password,
+    String userName,
+    bool isLogin,
+    BuildContext ctx,
+  ) submitFn;
+
+  final bool isLoading;
 
   @override
   State<AuthForm> createState() => _AuthFormState();
@@ -20,9 +30,13 @@ class _AuthFormState extends State<AuthForm> {
 
     if (isValid != null && isValid == true) {
       _formKey.currentState?.save();
-      print(_userEmail);
-      print(_userName);
-      print(_userPassword);
+      widget.submitFn(
+        _userEmail.trim(),
+        _userPassword.trim(),
+        _userName.trim(),
+        _isLogin,
+        context,
+      );
     }
   }
 
@@ -64,23 +78,25 @@ class _AuthFormState extends State<AuthForm> {
                     },
                   ),
                   if (!_isLogin)
-                  TextFormField(
-                    key: const ValueKey('username'),
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
+                    TextFormField(
+                      key: const ValueKey('username'),
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                      ),
+                      validator: (value) {
+                        if (value == null ||
+                            value.isEmpty ||
+                            value.length < 4) {
+                          return 'Username must be at least 4 characters long.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        if (value != null) {
+                          _userName = value;
+                        }
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty || value.length < 4) {
-                        return 'Username must be at least 4 characters long.';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) {
-                      if (value != null) {
-                        _userName = value;
-                      }
-                    },
-                  ),
                   TextFormField(
                     key: const ValueKey('password'),
                     decoration: const InputDecoration(
@@ -102,20 +118,23 @@ class _AuthFormState extends State<AuthForm> {
                   const SizedBox(
                     height: 12,
                   ),
-                  ElevatedButton(
-                    onPressed: _trySubmit,
-                    child: Text(_isLogin ? 'Login' : 'Signup'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isLogin = !_isLogin;
-                      });
-                    },
-                    child: Text(_isLogin
-                        ? 'Create new account'
-                        : 'I already have an account'),
-                  ),
+                  if (widget.isLoading) const CircularProgressIndicator(),
+                  if (!widget.isLoading)
+                    ElevatedButton(
+                      onPressed: _trySubmit,
+                      child: Text(_isLogin ? 'Login' : 'Signup'),
+                    ),
+                  if (!widget.isLoading)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLogin = !_isLogin;
+                        });
+                      },
+                      child: Text(_isLogin
+                          ? 'Create new account'
+                          : 'I already have an account'),
+                    ),
                 ],
               ),
             ),
